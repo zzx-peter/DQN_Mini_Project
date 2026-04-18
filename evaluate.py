@@ -41,6 +41,19 @@ DEFAULT_EVAL_EPISODES = 500
 
 
 # ---------------------------------------------------------------------------
+def _write_results_incremental(results: dict[int, dict], results_file: str) -> None:
+    """
+    Persist partial results safely during a long sweep.
+
+    Writes to a temporary file first, then atomically replaces results_file.
+    """
+    tmp_path = results_file + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump({str(k): v for k, v in results.items()}, f, indent=2, ensure_ascii=False)
+    os.replace(tmp_path, results_file)
+
+
+# ---------------------------------------------------------------------------
 def evaluate_one(
     n: int,
     save_dir: str = "models",
@@ -238,6 +251,7 @@ def run_sweep(
             else:
                 print(f"[n={n:2d}] SKIP  (no checkpoint; use --auto_train to train)")
                 results[n] = {"n": n, "success_rate": None, "examples": []}
+                _write_results_incremental(results, results_file)
                 continue
 
         print(f"[n={n:2d}] Evaluating ({num_eval_episodes} eps)...", end="  ", flush=True)
@@ -251,10 +265,9 @@ def run_sweep(
             mark = "OK" if ex["success"] else "XX"
             print(f"     [{mark}]  target={ex['target']}   generated={ex['generated']}")
 
-    # Persist JSON
-    with open(results_file, "w", encoding="utf-8") as f:
-        json.dump({str(k): v for k, v in results.items()}, f, indent=2,
-                  ensure_ascii=False)
+        # Persist results after each n so progress isn't lost
+        _write_results_incremental(results, results_file)
+
     print(f"\nResults saved to: {results_file}")
 
     # Plot
