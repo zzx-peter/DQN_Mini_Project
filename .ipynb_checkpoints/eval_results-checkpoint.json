@@ -1,0 +1,53 @@
+{
+  "1": {
+    "n": 1,
+    "success_rate": 1.0,
+    "examples": [
+      {
+        "target": [
+          0
+        ],
+        "generated": [
+          0
+        ],
+        "success": true
+      },
+      {
+        "target": [
+          1
+        ],
+        "generated": [
+          1
+        ],
+        "success": true
+      },
+      {
+        "target": [
+          0
+        ],
+        "generated": [
+          0
+        ],
+        "success": true
+      },
+      {
+        "target": [
+          0
+        ],
+        "generated": [
+          0
+        ],
+        "success": true
+      },
+      {
+        "target": [
+          1
+        ],
+        "generated": [
+          1
+        ],
+        "success": true
+      }
+    ]
+  }
+}
