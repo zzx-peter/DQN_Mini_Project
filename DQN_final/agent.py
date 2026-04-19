@@ -170,24 +170,38 @@ class DQNAgent:
         return loss.item()
 
     # ------------------------------------------------------------------
-    def save(self, path: str) -> None:
-        """Save network weights, optimizer state, and epsilon to a checkpoint."""
-        torch.save(
-            {
-                "q_net": self.q_net.state_dict(),
-                "target_net": self.target_net.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
-                "epsilon": self.epsilon,
-                "update_count": self._update_count,
-            },
-            path,
-        )
+    def save(
+        self,
+        path: str,
+        *,
+        n: int | None = None,
+        trained_episodes: int | None = None,
+    ) -> None:
+        """Save network weights, optimizer state, epsilon, and optional run metadata."""
+        payload: dict = {
+            "q_net": self.q_net.state_dict(),
+            "target_net": self.target_net.state_dict(),
+            "optimizer": self.optimizer.state_dict(),
+            "epsilon": self.epsilon,
+            "update_count": self._update_count,
+        }
+        if n is not None:
+            payload["n"] = n
+        if trained_episodes is not None:
+            payload["trained_episodes"] = trained_episodes
+        torch.save(payload, path)
 
-    def load(self, path: str) -> None:
-        """Load a checkpoint saved by save()."""
+    def load(self, path: str) -> dict[str, int]:
+        """Load a checkpoint saved by save(). Returns metadata keys ``n`` / ``trained_episodes`` if present."""
         ckpt = torch.load(path, map_location=self.device)
         self.q_net.load_state_dict(ckpt["q_net"])
         self.target_net.load_state_dict(ckpt["target_net"])
         self.optimizer.load_state_dict(ckpt["optimizer"])
         self.epsilon = ckpt.get("epsilon", self.epsilon_end)
         self._update_count = ckpt.get("update_count", 0)
+        meta: dict[str, int] = {}
+        if "n" in ckpt:
+            meta["n"] = int(ckpt["n"])
+        if "trained_episodes" in ckpt:
+            meta["trained_episodes"] = int(ckpt["trained_episodes"])
+        return meta

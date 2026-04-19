@@ -1,6 +1,6 @@
 # DQN Bit-Sequence Generation
 
-A standard **Deep Q-Network (DQN)** that learns to reproduce a random binary
+A **Deep Q-Network (DQN)** that learns to reproduce a random binary
 target sequence of length *n* (1 ≤ n ≤ 50), token by token.
 
 Observations are **always** `[target[t], step/n]` (shape **2)** — input size does
@@ -16,7 +16,7 @@ DQN_PLUS/
 ├── env.py          # Custom Gymnasium environment
 ├── network.py      # Q-Network MLP definition
 ├── agent.py        # ReplayBuffer + DQNAgent
-├── train.py        # Train at one n → models/dqn.pt
+├── train.py        # Train at one n → models/dqn.pt (supports --resume)
 ├── evaluate.py     # Sweep n = 1 … n_max with that checkpoint
 ├── requirements.txt
 └── README.md
@@ -44,6 +44,19 @@ python train.py --n 20
 python train.py --n 20 --episodes 15000
 python train.py --device cuda
 python train.py --no_shaping
+```
+
+### Resume from checkpoint
+
+Continue training with the same `--n` as the saved run. Loads `{save_dir}/dqn.pt`
+(or `--checkpoint`). Existing `history.json` is merged (curves appended); replay
+buffer starts empty each run.
+
+```bash
+python train.py --n 8 --episodes 4000 --save_dir models --resume
+
+# Load a specific file (still must match checkpoint `n` when stored)
+python train.py --n 8 --episodes 2000 --save_dir models --resume --checkpoint path/to/dqn.pt
 ```
 
 ### Evaluate across *n*
@@ -87,6 +100,10 @@ python evaluate.py --plot_training
 One `BitSequenceEnv(n)` for the whole run; each episode calls `reset()`.
 Default episode count follows `get_episode_count(n)`.
 
+**Resume (`--resume`)**: restores weights, target net, optimizer, ε, and gradient-step
+counter from `dqn.pt`. Checkpoint may store metadata (`n`, `trained_episodes`) for
+validation and logging; `--episodes` then means *additional* episodes in this segment.
+
 ---
 
 ## Evaluation metric
@@ -100,8 +117,8 @@ Default episode count follows `get_episode_count(n)`.
 
 | File | Description |
 |---|---|
-| `models/dqn.pt` | Checkpoint |
-| `models/history.json` | Training curve (includes training `n`) |
+| `models/dqn.pt` | Checkpoint (weights, optimizer, ε; optional `n`, `trained_episodes`) |
+| `models/history.json` | Training curve (includes training `n`; appended when resuming) |
 | `eval_results.json` | Sweep results |
 | `success_rate.png` | Success rate vs *n* |
 | `training_curves.png` | Smoothed training success (`--plot_training`) |
